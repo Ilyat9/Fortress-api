@@ -12,7 +12,6 @@ The service layer:
 """
 
 from datetime import datetime
-from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,14 +19,13 @@ from app.core.config import get_priority_order
 from app.core.logging import get_logger
 from app.core.metrics import (
     business_operations_duration_seconds,
-    business_operations_total,
     todos_completed_total,
     todos_created_total,
     todos_deleted_total,
     todos_updated_total,
 )
 from app.domain.todo.models import Todo
-from app.domain.todo.schemas import TodoBase, TodoCreate, TodoUpdate
+from app.domain.todo.schemas import TodoCreate, TodoUpdate
 from app.infrastructure.repositories.todo_repository import TodoRepository
 
 logger = get_logger(__name__)
@@ -76,7 +74,7 @@ class TodoService:
             logger.info(
                 f"Todo created successfully in {duration:.3f}s",
                 todo_id=todo.id,
-                priority=priority.priority,
+                priority=todo.priority,
             )
 
             return todo
@@ -129,7 +127,7 @@ class TodoService:
         start_time = datetime.now()
 
         logger.info(
-            f"Fetching todos",
+            "Fetching todos",
             page=page,
             page_size=page_size,
             sort_by=sort_by,

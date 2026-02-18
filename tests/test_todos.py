@@ -5,19 +5,17 @@ Todo API Tests
 Integration tests for todo endpoints.
 """
 
-import asyncio
 
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.todo.models import Todo
-from app.domain.todo.schemas import TodoResponse
-from app.infrastructure.db import get_db
 
 
 @pytest.mark.asyncio
-async def test_create_todo(client: AsyncClient, test_db_session: AsyncSession) -> None:
+async def test_create_todo(client: AsyncClient, _test_db_session: AsyncSession) -> None:
     """Test creating a new todo."""
     response = await client.post(
         "/api/v1/todos",
@@ -157,7 +155,7 @@ async def test_list_todos_pagination(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_list_todos_filter_completed(client: AsyncClient, test_completed_todo: dict) -> None:
+async def test_list_todos_filter_completed(client: AsyncClient, _test_completed_todo: dict) -> None:
     """Test listing todos with completion filter."""
     # Create another incomplete todo
     await client.post(

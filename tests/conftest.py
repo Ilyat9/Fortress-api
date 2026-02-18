@@ -6,18 +6,15 @@ Provides shared fixtures and test configuration.
 """
 
 import asyncio
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 import pytest
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.core.config import get_settings, settings
-from app.core.lifespan import Base, async_session_maker, engine
-from app.domain.todo.schemas import TodoCreate
-from app.infrastructure.db import init_db, drop_db
+from app.core.config import get_settings
+from app.core.lifespan import Base
 from app.main import app
-
 
 # Test database URL
 TEST_DATABASE_URL = "postgresql+asyncpg://todo_user:todo_password@localhost:5432/todo_test_db"
@@ -78,6 +75,7 @@ async def client(test_db_session: AsyncSession) -> AsyncGenerator:
     Yields:
         AsyncClient: Test HTTP client
     """
+
     # Override database session dependency
     async def override_get_db():
         yield test_db_session
