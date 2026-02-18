@@ -135,8 +135,8 @@ open htmlcov/index.html
 
 ```bash
 # Клонировать репозиторий
-git clone <repository-url>
-cd Fortress
+git clone https://github.com/Ilyat9/Fortress-api
+cd Fortress-api
 
 # Установить зависимости
 poetry install --with dev
