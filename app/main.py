@@ -12,7 +12,6 @@ This module:
 - Manages application lifecycle
 """
 
-import logging
 import time
 from contextlib import asynccontextmanager
 
@@ -26,8 +25,7 @@ from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.lifespan import shutdown_event, startup_event
 from app.core.logging import setup_logging
-from app.core.metrics import record_http_request_end, record_http_request_start
-
+from app.core.metrics import record_http_request
 
 # Initialize logging
 setup_logging()
@@ -37,7 +35,7 @@ logger = structlog.get_logger(__name__)
 
 # Lifespan context manager
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     """
     Application lifespan manager.
 
@@ -79,6 +77,7 @@ app.add_middleware(
 )
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
 
 # Metrics endpoint
 @app.get(settings.metrics_path)
@@ -164,6 +163,7 @@ async def log_requests(request: Request, call_next) -> Response:
 
 # Include API routers
 app.include_router(api_router, prefix=settings.api_v1_prefix)
+
 
 # Root endpoint
 @app.get("/")

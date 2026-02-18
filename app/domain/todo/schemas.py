@@ -11,16 +11,15 @@ These schemas are:
 """
 
 from datetime import datetime
-from typing import Any, Optional
 
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class TodoBase(BaseModel):
     """Base schema for Todo."""
 
     title: str = Field(..., min_length=1, max_length=255, description="Todo title")
-    description: Optional[str] = Field(None, max_length=1000, description="Todo description")
+    description: str | None = Field(None, max_length=1000, description="Todo description")
     is_completed: bool = Field(default=False, description="Todo completion status")
     priority: str = Field(
         default="medium",
@@ -45,10 +44,10 @@ class TodoCreate(TodoBase):
 class TodoUpdate(BaseModel):
     """Schema for updating a todo."""
 
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = Field(None, max_length=1000)
-    is_completed: Optional[bool] = None
-    priority: Optional[str] = Field(None, pattern="^(low|medium|high)$")
+    title: str | None = Field(None, min_length=1, max_length=255)
+    description: str | None = Field(None, max_length=1000)
+    is_completed: bool | None = None
+    priority: str | None = Field(None, pattern="^(low|medium|high)$")
 
     model_config = ConfigDict(
         extra="forbid",
@@ -96,7 +95,7 @@ class HealthResponse(BaseModel):
 # Validators for prioritization
 @field_validator("priority")
 @classmethod
-def validate_priority(cls, v: str) -> str:
+def validate_priority(_cls, v: str) -> str:
     """Validate priority is one of allowed values."""
     valid_priorities = ["low", "medium", "high"]
     if v not in valid_priorities:
