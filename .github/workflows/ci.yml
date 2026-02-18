@@ -167,10 +167,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry config virtualenvs.create false
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
           poetry install --with dev
           pip install setuptools
-          
+
       - name: Run mypy (advisory only)
         run: |
           echo "Running mypy type checker (errors are advisory only)..."
