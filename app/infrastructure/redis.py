@@ -16,14 +16,21 @@ from typing import Any
 import redis.asyncio as redis
 from redis.asyncio import Redis
 
-from app.core.config import redis_settings
 from app.core.logging import get_logger
 from app.core.metrics import (
     cache_hits_total,
     cache_misses_total,
     cache_operations_in_progress,
-    cache_set_duration_seconds,
 )
+
+
+def record_cache_hit() -> None:
+    cache_hits_total.inc()
+
+
+def record_cache_miss() -> None:
+    cache_misses_total.inc()
+
 
 logger = get_logger(__name__)
 

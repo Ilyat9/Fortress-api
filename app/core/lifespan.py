@@ -11,10 +11,7 @@ This module handles:
 - Graceful shutdown of resources
 """
 
-import asyncio
-import logging
 import redis.asyncio as redis
-
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
@@ -24,7 +21,6 @@ from app.core.logging import get_logger
 from app.core.metrics import (
     db_connections_active,
     db_connections_idle,
-    cache_operations_in_progress,
 )
 
 logger = get_logger(__name__)
@@ -151,4 +147,3 @@ async def shutdown_event() -> None:
     except Exception as e:
         logger.error("Application shutdown failed", error=str(e))
         raise
-

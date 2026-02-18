@@ -7,8 +7,6 @@ All logs must be JSON format with proper tracing context.
 """
 
 import logging.config
-from collections.abc import Callable
-from typing import Any
 
 import structlog
 from structlog.types import EventDict, Processor
@@ -16,7 +14,7 @@ from structlog.types import EventDict, Processor
 from app.core.config import logging_settings
 
 
-def add_trace_id(logger: logging.Logger, method_name: str, event_dict: EventDict) -> EventDict:
+def add_trace_id(logger: logging.Logger, _method_name: str, event_dict: EventDict) -> EventDict:
     """
     Add trace_id to log context if available.
 
@@ -36,7 +34,7 @@ def add_trace_id(logger: logging.Logger, method_name: str, event_dict: EventDict
     return event_dict
 
 
-def add_request_id(logger: logging.Logger, method_name: str, event_dict: EventDict) -> EventDict:
+def add_request_id(logger: logging.Logger, _method_name: str, event_dict: EventDict) -> EventDict:
     """
     Add request_id to log context if available.
 

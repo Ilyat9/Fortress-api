@@ -8,7 +8,6 @@ Environment variables are the source of truth for all configuration.
 """
 
 from functools import lru_cache
-from typing import Any
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -130,7 +129,9 @@ class AppSettings(BaseSettings):
 
     # Rate limiting
     rate_limit_enabled: bool = Field(default=True, description="Enable rate limiting")
-    rate_limit_requests: int = Field(default=100, ge=1, description="Rate limit requests per window")
+    rate_limit_requests: int = Field(
+        default=100, ge=1, description="Rate limit requests per window"
+    )
     rate_limit_window: int = Field(default=60, ge=1, description="Rate limit window in seconds")
 
     model_config = SettingsConfigDict(
@@ -143,7 +144,10 @@ class AppSettings(BaseSettings):
     @classmethod
     def validate_cors_origins(cls, v: list[str]) -> list[str]:
         """Validate CORS origins."""
-        return [origin if origin.startswith(("http://", "https://")) else f"http://{origin}" for origin in v]
+        return [
+            origin if origin.startswith(("http://", "https://")) else f"http://{origin}"
+            for origin in v
+        ]
 
     @model_validator(mode="after")
     def set_debug_from_env(self) -> "AppSettings":

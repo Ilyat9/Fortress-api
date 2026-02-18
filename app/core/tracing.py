@@ -14,7 +14,6 @@ Coverage:
 from contextlib import contextmanager
 from typing import Any
 
-import redis.asyncio as redis
 from opentelemetry import trace
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.instrumentation.redis import RedisInstrumentor
@@ -23,7 +22,6 @@ from opentelemetry.sdk.resources import SERVICE_NAME, SERVICE_VERSION, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import tracing_settings
 
@@ -111,11 +109,13 @@ def trace_operation(name: str, **kwargs: Any):
         return
 
     tracer = get_tracer()
-    with tracer.start_as_current_span(name, kind=trace.SpanKind.INTERNAL, attributes=kwargs) as span:
+    with tracer.start_as_current_span(
+        name, kind=trace.SpanKind.INTERNAL, attributes=kwargs
+    ) as span:
         yield span
 
 
-def extract_trace_context(request: Any) -> dict[str, str]:
+def extract_trace_context(_request: Any) -> dict[str, str]:
     """
     Extract trace context from HTTP request.
 

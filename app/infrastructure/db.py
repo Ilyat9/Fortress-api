@@ -10,13 +10,12 @@ Provides:
 - Model registration
 """
 
-from typing import AsyncGenerator
-
-from app.core.config import db_settings
-from app.core.lifespan import engine, async_session_maker
-from app.domain.todo.models import Base as TodoBase
+from collections.abc import AsyncGenerator
 
 from sqlalchemy import text
+
+from app.core.lifespan import async_session_maker, engine
+from app.domain.todo.models import Base
 
 
 async def init_db() -> None:

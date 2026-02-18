@@ -10,10 +10,7 @@ Provides metrics for:
 - Custom business metrics
 """
 
-from prometheus_client import REGISTRY, Counter, Histogram, Gauge
-
-from app.core.config import metrics_settings
-
+from prometheus_client import REGISTRY, Counter, Gauge, Histogram
 
 # HTTP Metrics
 http_requests_total = Counter(

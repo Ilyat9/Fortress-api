@@ -14,12 +14,11 @@ This repository:
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Select, asc, desc, select
+from sqlalchemy import asc, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_priority_order
-from app.core.metrics import record_db_query
 from app.core.logging import get_logger
+from app.core.metrics import record_db_query
 from app.domain.todo.models import Todo
 from app.infrastructure.redis import get, set
 
@@ -107,7 +106,9 @@ class TodoRepository:
         if sort_by == "priority":
             query = query.order_by(asc(Todo.priority) if order == "asc" else desc(Todo.priority))
         elif sort_by in ("created_at", "updated_at"):
-            query = query.order_by(asc(getattr(Todo, sort_by)) if order == "asc" else desc(getattr(Todo, sort_by)))
+            query = query.order_by(
+                asc(getattr(Todo, sort_by)) if order == "asc" else desc(getattr(Todo, sort_by))
+            )
         else:
             # Default sort by created_at descending
             query = query.order_by(desc(Todo.created_at))
