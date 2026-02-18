@@ -95,6 +95,7 @@ jobs:
         run: |
           poetry config virtualenvs.create false
           poetry install --with dev
+          pip install setuptools
 
       - name: Wait for services to be ready
         run: |
