@@ -26,7 +26,6 @@ jobs:
       - name: Install dependencies
         run: |
           poetry config virtualenvs.create false
-          pip install setuptools
           poetry install --no-root
 
       - name: Auto-fix imports and formatting
@@ -96,7 +95,6 @@ jobs:
           poetry config virtualenvs.create false
           poetry add setuptools
           poetry install --with dev
-          pip install setuptools
 
       - name: Wait for services to be ready
         run: |
@@ -168,6 +166,7 @@ jobs:
         with:
           python-version: "3.11"
           cache: "poetry"
+          cache-dependency-path: "**/poetry.lock"
 
       - name: Install dependencies
         run: |
