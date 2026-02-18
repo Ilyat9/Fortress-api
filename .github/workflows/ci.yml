@@ -128,4 +128,4 @@ jobs:
 
       - name: Run health check in container
         run: |
-          docker run --rm todo-api:ci python -c "import requests; requests.get('http://localhost:8000/api/v1/health', timeout=5)"
+          docker run --rm todo-api:ci python -c "import requests
