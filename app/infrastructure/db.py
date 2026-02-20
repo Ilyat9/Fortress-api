@@ -13,9 +13,10 @@ Provides:
 from collections.abc import AsyncGenerator
 
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.lifespan import async_session_maker, engine
-from app.domain.todo.models import Base
+from app.infrastructure.database import Base
 
 
 async def init_db() -> None:
@@ -58,12 +59,18 @@ async def test_connection() -> bool:
         return False
 
 
-async def get_db() -> AsyncGenerator:
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
-    Dependency to get database session.
+    Dependency that provides a database session.
+    Commits on success, rolls back on any exception.
 
     Yields:
         AsyncSession: Database session
     """
     async with async_session_maker() as session:
-        yield session
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise

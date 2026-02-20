@@ -15,7 +15,7 @@ from app.domain.todo.models import Todo
 
 
 @pytest.mark.asyncio
-async def test_create_todo(client: AsyncClient, _test_db_session: AsyncSession) -> None:
+async def test_create_todo(client: AsyncClient, test_db_session: AsyncSession) -> None:
     """Test creating a new todo."""
     response = await client.post(
         "/api/v1/todos",

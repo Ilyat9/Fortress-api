@@ -117,7 +117,8 @@ class AppSettings(BaseSettings):
     app_name: str = Field(default="Todo API", description="Application name")
     app_version: str = Field(default="0.1.0", description="Application version")
     debug: bool = Field(default=False, description="Debug mode")
-
+    metrics_path: str = "/metrics"
+    
     # CORS settings
     cors_origins: list[str] = Field(
         default=["*"],
@@ -144,10 +145,15 @@ class AppSettings(BaseSettings):
     @classmethod
     def validate_cors_origins(cls, v: list[str]) -> list[str]:
         """Validate CORS origins."""
-        return [
-            origin if origin.startswith(("http://", "https://")) else f"http://{origin}"
-            for origin in v
-        ]
+        result = []
+        for origin in v:
+            if origin == "*":
+                result.append(origin)
+            elif origin.startswith(("http://", "https://")):
+                result.append(origin)
+            else:
+                result.append(f"https://{origin}")
+        return result
 
     @model_validator(mode="after")
     def set_debug_from_env(self) -> "AppSettings":

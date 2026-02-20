@@ -27,7 +27,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # Используем виртуальное окружение внутри проекта для изоляции
           poetry config virtualenvs.in-project true
           poetry install --no-root
 
@@ -97,9 +96,9 @@ jobs:
       - name: Install dependencies
         run: |
           poetry config virtualenvs.in-project true
-          # Мы убрали poetry add, так как это плохая практика в CI. 
-          # Если setuptools нужны, их лучше добавить в pyproject.toml заранее.
           poetry install --with dev
+          # Фикс для opentelemetry: устанавливаем setuptools прямо в venv проекта
+          poetry run pip install setuptools
 
       - name: Wait for services to be ready
         run: |
@@ -129,7 +128,7 @@ jobs:
           python --version
           echo ""
           echo "Installed packages:"
-          poetry run pip list | grep -E "(pytest|fastapi|sqlalchemy|redis|httpx)"
+          poetry run pip list | grep -E "(pytest|fastapi|sqlalchemy|redis|httpx|setuptools)"
           echo ""
           echo "PYTHONPATH: $PYTHONPATH"
 
@@ -178,6 +177,8 @@ jobs:
         run: |
           poetry config virtualenvs.in-project true
           poetry install --with dev
+          # Добавляем и сюда, чтобы mypy видел типы
+          poetry run pip install setuptools
 
       - name: Run mypy (advisory only)
         run: |

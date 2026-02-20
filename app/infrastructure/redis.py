@@ -103,6 +103,11 @@ async def get(key: str, prefix: str = "todo") -> Any | None:
     """
     global redis_client
 
+    # BUG #10 FIX: Guard against None redis_client before calling methods on it.
+    if redis_client is None:
+        logger.warning("Redis client is not initialized, skipping cache get")
+        return None
+
     cache_key = get_key(key, prefix)
 
     cache_operations_in_progress.labels(operation="get").inc()
@@ -141,6 +146,11 @@ async def set(key: str, value: Any, prefix: str = "todo", ttl: int = 3600) -> bo
     """
     global redis_client
 
+    # BUG #10 FIX: Guard against None redis_client.
+    if redis_client is None:
+        logger.warning("Redis client is not initialized, skipping cache set")
+        return False
+
     cache_key = get_key(key, prefix)
 
     cache_operations_in_progress.labels(operation="set").inc()
@@ -172,6 +182,11 @@ async def delete(key: str, prefix: str = "todo") -> bool:
     """
     global redis_client
 
+    # BUG #10 FIX: Guard against None redis_client.
+    if redis_client is None:
+        logger.warning("Redis client is not initialized, skipping cache delete")
+        return False
+
     cache_key = get_key(key, prefix)
 
     try:
@@ -195,11 +210,18 @@ async def exists(key: str, prefix: str = "todo") -> bool:
     Returns:
         True if key exists
     """
+    global redis_client
+
+    # BUG #10 FIX: Guard against None redis_client.
+    if redis_client is None:
+        logger.warning("Redis client is not initialized, skipping cache exists")
+        return False
+
     cache_key = get_key(key, prefix)
 
     try:
-        exists = await redis_client.exists(cache_key)
-        return exists > 0
+        result = await redis_client.exists(cache_key)
+        return result > 0
 
     except Exception as e:
         logger.error(f"Cache exists error for key {cache_key}: {e}")
@@ -216,6 +238,13 @@ async def clear_pattern(pattern: str) -> int:
     Returns:
         Number of keys deleted
     """
+    global redis_client
+
+    # BUG #10 FIX: Guard against None redis_client.
+    if redis_client is None:
+        logger.warning("Redis client is not initialized, skipping clear_pattern")
+        return 0
+
     try:
         keys = await redis_client.keys(pattern)
         if keys:

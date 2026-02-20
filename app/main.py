@@ -20,7 +20,8 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from prometheus_client import generate_latest
-
+from app.infrastructure.database import Base
+from app.infrastructure.db import engine
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.lifespan import shutdown_event, startup_event
@@ -45,6 +46,10 @@ async def lifespan(_app: FastAPI):
         app: FastAPI application instance
     """
     logger.info("Starting application lifespan")
+
+    logger.info("Creating database tables if they don't exist...")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
     # Startup
     await startup_event()

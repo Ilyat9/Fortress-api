@@ -15,7 +15,8 @@ from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_priority_order
+# BUG #6 FIX: get_priority_order lives in schemas, not config.
+from app.domain.todo.schemas import TodoCreate, TodoUpdate, get_priority_order
 from app.core.logging import get_logger
 from app.core.metrics import (
     business_operations_duration_seconds,
@@ -25,7 +26,6 @@ from app.core.metrics import (
     todos_updated_total,
 )
 from app.domain.todo.models import Todo
-from app.domain.todo.schemas import TodoCreate, TodoUpdate
 from app.infrastructure.repositories.todo_repository import TodoRepository
 
 logger = get_logger(__name__)

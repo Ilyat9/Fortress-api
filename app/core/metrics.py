@@ -10,6 +10,8 @@ Provides metrics for:
 - Custom business metrics
 """
 
+from datetime import datetime
+
 from prometheus_client import REGISTRY, Counter, Gauge, Histogram
 
 # HTTP Metrics
@@ -144,15 +146,19 @@ def record_http_request(method: str, endpoint: str, status_code: int, duration: 
     http_request_duration_seconds.labels(method=method, endpoint=endpoint).observe(duration)
 
 
-def record_http_request_start(method: str, endpoint: str) -> None:
+def record_http_request_start(method: str, endpoint: str) -> datetime:
     """
     Record start of HTTP request.
 
     Args:
         method: HTTP method
         endpoint: Request endpoint
+
+    Returns:
+        Start time for duration calculation.
     """
     http_requests_in_progress.labels(method=method, endpoint=endpoint).inc()
+    return datetime.now()
 
 
 def record_http_request_end(method: str, endpoint: str, status_code: int, duration: float) -> None:

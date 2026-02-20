@@ -12,8 +12,8 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.core.config import get_settings
-from app.core.lifespan import Base
+from app.infrastructure.database import Base
+from app.infrastructure.db import get_db
 from app.main import app
 
 # Test database URL
@@ -75,12 +75,10 @@ async def client(test_db_session: AsyncSession) -> AsyncGenerator:
     Yields:
         AsyncClient: Test HTTP client
     """
-
-    # Override database session dependency
     async def override_get_db():
         yield test_db_session
 
-    app.dependency_overrides[get_settings] = lambda: get_settings()
+    app.dependency_overrides[get_db] = override_get_db
 
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
@@ -112,8 +110,10 @@ async def test_todo(client: AsyncClient) -> dict:
     return response.json()
 
 
+# BUG #7 FIX: Renamed fixture from test_completed_todo to _test_completed_todo
+# to match the name used in test_todos.py line 158.
 @pytest.fixture
-async def test_completed_todo(client: AsyncClient, test_todo: dict) -> dict:
+async def _test_completed_todo(client: AsyncClient, test_todo: dict) -> dict:
     """
     Create and complete a test todo.
 

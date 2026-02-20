@@ -14,7 +14,6 @@ This module handles:
 import redis.asyncio as redis
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import declarative_base
 
 from app.core.config import db_settings, redis_settings
 from app.core.logging import get_logger
@@ -22,6 +21,7 @@ from app.core.metrics import (
     db_connections_active,
     db_connections_idle,
 )
+from app.infrastructure.database import Base  # noqa: F401  (re-exported for back-compat)
 
 logger = get_logger(__name__)
 
@@ -44,29 +44,9 @@ async_session_maker = async_sessionmaker(
     autoflush=False,
 )
 
-# Base class for models
-Base = declarative_base()
 
 
-async def get_db() -> AsyncSession:
-    """
-    Dependency function to get database session.
 
-    Yields:
-        AsyncSession: Database session
-    """
-    async with async_session_maker() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
-        finally:
-            await session.close()
-
-
-# Global Redis connection pool
 redis_pool: redis.ConnectionPool | None = None
 
 

@@ -15,6 +15,7 @@ Each endpoint:
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.logging import get_logger
@@ -45,7 +46,7 @@ async def list_todos(
     priority: str | None = Query(
         None, regex="^(low|medium|high)$", description="Filter by priority"
     ),
-    db: dict = Depends(get_db),
+    session: AsyncSession = Depends(get_db),
 ) -> TodoListResponse:
     """
     Get all todos with pagination and filtering.
@@ -61,10 +62,7 @@ async def list_todos(
     Returns:
         Paginated list of todos
     """
-    request_id = getattr(getattr(db.get("request"), "state", None), "id", "unknown")
-
-    logger.info("Fetching todos list", request_id=request_id, page=page, page_size=page_size)
-
+    logger.info("Fetching todos list", page=page, page_size=page_size)
     start_time = record_http_request_start("GET", "/api/v1/todos")
 
     try:
@@ -74,7 +72,7 @@ async def list_todos(
             span.set_attribute("sort_by", sort_by)
             span.set_attribute("order", order)
 
-            service = TodoService(db["session"])
+            service = TodoService(session)
             todos, total = await service.get_todos(
                 page=page,
                 page_size=page_size,
@@ -84,7 +82,6 @@ async def list_todos(
                 priority=priority,
             )
 
-            # Calculate pagination info
             has_next = (page * page_size) < total
             has_previous = page > 1
 
@@ -97,27 +94,27 @@ async def list_todos(
                 has_previous=has_previous,
             )
 
-            duration = (db["start_time"] - start_time).total_seconds()
+            duration = (datetime.now() - start_time).total_seconds()
             record_http_request_end("GET", "/api/v1/todos", status.HTTP_200_OK, duration)
 
-            logger.info("Todos fetched successfully", request_id=request_id, total=total)
+            logger.info("Todos fetched successfully", total=total)
 
             return response
 
     except Exception as e:
-        duration = (db["start_time"] - start_time).total_seconds()
+        duration = (datetime.now() - start_time).total_seconds()
         record_http_request_end(
             "GET", "/api/v1/todos", status.HTTP_500_INTERNAL_SERVER_ERROR, duration
         )
 
-        logger.error("Failed to fetch todos", request_id=request_id, error=str(e))
+        logger.error("Failed to fetch todos", error=str(e))
         raise
 
 
 @router.get("/{todo_id}", response_model=TodoResponse)
 async def get_todo(
     todo_id: int,
-    db: dict = Depends(get_db),
+    session: AsyncSession = Depends(get_db),
 ) -> TodoResponse:
     """
     Get a specific todo by ID.
@@ -128,9 +125,7 @@ async def get_todo(
     Returns:
         Todo entity
     """
-    request_id = getattr(getattr(db.get("request"), "state", None), "id", "unknown")
-
-    logger.info("Fetching todo", request_id=request_id, todo_id=todo_id)
+    logger.info("Fetching todo", todo_id=todo_id)
 
     start_time = record_http_request_start("GET", "/api/v1/todos/{todo_id}")
 
@@ -138,40 +133,40 @@ async def get_todo(
         with tracer.start_as_current_span("get_todo", kind="server") as span:
             span.set_attribute("todo_id", todo_id)
 
-            service = TodoService(db["session"])
+            service = TodoService(session)
             todo = await service.get_todo(todo_id)
 
             if not todo:
-                duration = (db["start_time"] - start_time).total_seconds()
+                duration = (datetime.now() - start_time).total_seconds()
                 record_http_request_end(
                     "GET", "/api/v1/todos/{todo_id}", status.HTTP_404_NOT_FOUND, duration
                 )
 
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found")
 
-            duration = (db["start_time"] - start_time).total_seconds()
+            duration = (datetime.now() - start_time).total_seconds()
             record_http_request_end("GET", "/api/v1/todos/{todo_id}", status.HTTP_200_OK, duration)
 
-            logger.info("Todo fetched successfully", request_id=request_id, todo_id=todo_id)
+            logger.info("Todo fetched successfully", todo_id=todo_id)
 
             return todo
 
     except HTTPException:
         raise
     except Exception as e:
-        duration = (db["start_time"] - start_time).total_seconds()
+        duration = (datetime.now() - start_time).total_seconds()
         record_http_request_end(
             "GET", "/api/v1/todos/{todo_id}", status.HTTP_500_INTERNAL_SERVER_ERROR, duration
         )
 
-        logger.error("Failed to fetch todo", request_id=request_id, todo_id=todo_id, error=str(e))
+        logger.error("Failed to fetch todo", todo_id=todo_id, error=str(e))
         raise
 
 
 @router.post("/", response_model=TodoResponse, status_code=status.HTTP_201_CREATED)
 async def create_todo(
     todo_data: TodoCreate,
-    db: dict = Depends(get_db),
+    session: AsyncSession = Depends(get_db),
 ) -> TodoResponse:
     """
     Create a new todo.
@@ -185,9 +180,7 @@ async def create_todo(
     Returns:
         Created todo entity
     """
-    request_id = getattr(getattr(db.get("request"), "state", None), "id", "unknown")
-
-    logger.info("Creating todo", request_id=request_id, title=todo_data.title)
+    logger.info("Creating todo", title=todo_data.title)
 
     start_time = record_http_request_start("POST", "/api/v1/todos")
 
@@ -196,23 +189,23 @@ async def create_todo(
             span.set_attribute("title", todo_data.title)
             span.set_attribute("priority", todo_data.priority)
 
-            service = TodoService(db["session"])
+            service = TodoService(session)
             todo = await service.create_todo(todo_data)
 
-            duration = (db["start_time"] - start_time).total_seconds()
+            duration = (datetime.now() - start_time).total_seconds()
             record_http_request_end("POST", "/api/v1/todos", status.HTTP_201_CREATED, duration)
 
-            logger.info("Todo created successfully", request_id=request_id, todo_id=todo.id)
+            logger.info("Todo created successfully", todo_id=todo.id)
 
             return todo
 
     except Exception as e:
-        duration = (db["start_time"] - start_time).total_seconds()
+        duration = (datetime.now() - start_time).total_seconds()
         record_http_request_end(
             "POST", "/api/v1/todos", status.HTTP_500_INTERNAL_SERVER_ERROR, duration
         )
 
-        logger.error("Failed to create todo", request_id=request_id, error=str(e))
+        logger.error("Failed to create todo", error=str(e))
         raise
 
 
@@ -220,7 +213,7 @@ async def create_todo(
 async def update_todo(
     todo_id: int,
     todo_data: TodoUpdate,
-    db: dict = Depends(get_db),
+    session: AsyncSession = Depends(get_db),
 ) -> TodoResponse:
     """
     Update a todo.
@@ -237,9 +230,7 @@ async def update_todo(
     Returns:
         Updated todo entity
     """
-    request_id = getattr(getattr(db.get("request"), "state", None), "id", "unknown")
-
-    logger.info("Updating todo", request_id=request_id, todo_id=todo_id)
+    logger.info("Updating todo", todo_id=todo_id)
 
     start_time = record_http_request_start("PUT", "/api/v1/todos/{todo_id}")
 
@@ -247,40 +238,40 @@ async def update_todo(
         with tracer.start_as_current_span("update_todo", kind="server") as span:
             span.set_attribute("todo_id", todo_id)
 
-            service = TodoService(db["session"])
+            service = TodoService(session)
             updated_todo = await service.update_todo(todo_id, todo_data)
 
             if not updated_todo:
-                duration = (db["start_time"] - start_time).total_seconds()
+                duration = (datetime.now() - start_time).total_seconds()
                 record_http_request_end(
                     "PUT", "/api/v1/todos/{todo_id}", status.HTTP_404_NOT_FOUND, duration
                 )
 
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found")
 
-            duration = (db["start_time"] - start_time).total_seconds()
+            duration = (datetime.now() - start_time).total_seconds()
             record_http_request_end("PUT", "/api/v1/todos/{todo_id}", status.HTTP_200_OK, duration)
 
-            logger.info("Todo updated successfully", request_id=request_id, todo_id=todo_id)
+            logger.info("Todo updated successfully", todo_id=todo_id)
 
             return updated_todo
 
     except HTTPException:
         raise
     except Exception as e:
-        duration = (db["start_time"] - start_time).total_seconds()
+        duration = (datetime.now() - start_time).total_seconds()
         record_http_request_end(
             "PUT", "/api/v1/todos/{todo_id}", status.HTTP_500_INTERNAL_SERVER_ERROR, duration
         )
 
-        logger.error("Failed to update todo", request_id=request_id, todo_id=todo_id, error=str(e))
+        logger.error("Failed to update todo", todo_id=todo_id, error=str(e))
         raise
 
 
 @router.delete("/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_todo(
     todo_id: int,
-    db: dict = Depends(get_db),
+    session: AsyncSession = Depends(get_db),
 ) -> None:
     """
     Delete a todo.
@@ -291,9 +282,7 @@ async def delete_todo(
     Returns:
         204 No Content on success
     """
-    request_id = getattr(getattr(db.get("request"), "state", None), "id", "unknown")
-
-    logger.info("Deleting todo", request_id=request_id, todo_id=todo_id)
+    logger.info("Deleting todo", todo_id=todo_id)
 
     start_time = record_http_request_start("DELETE", "/api/v1/todos/{todo_id}")
 
@@ -301,40 +290,40 @@ async def delete_todo(
         with tracer.start_as_current_span("delete_todo", kind="server") as span:
             span.set_attribute("todo_id", todo_id)
 
-            service = TodoService(db["session"])
+            service = TodoService(session)
             deleted = await service.delete_todo(todo_id)
 
             if not deleted:
-                duration = (db["start_time"] - start_time).total_seconds()
+                duration = (datetime.now() - start_time).total_seconds()
                 record_http_request_end(
                     "DELETE", "/api/v1/todos/{todo_id}", status.HTTP_404_NOT_FOUND, duration
                 )
 
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found")
 
-            duration = (db["start_time"] - start_time).total_seconds()
+            duration = (datetime.now() - start_time).total_seconds()
             record_http_request_end(
                 "DELETE", "/api/v1/todos/{todo_id}", status.HTTP_204_NO_CONTENT, duration
             )
 
-            logger.info("Todo deleted successfully", request_id=request_id, todo_id=todo_id)
+            logger.info("Todo deleted successfully", todo_id=todo_id)
 
     except HTTPException:
         raise
     except Exception as e:
-        duration = (db["start_time"] - start_time).total_seconds()
+        duration = (datetime.now() - start_time).total_seconds()
         record_http_request_end(
             "DELETE", "/api/v1/todos/{todo_id}", status.HTTP_500_INTERNAL_SERVER_ERROR, duration
         )
 
-        logger.error("Failed to delete todo", request_id=request_id, todo_id=todo_id, error=str(e))
+        logger.error("Failed to delete todo", todo_id=todo_id, error=str(e))
         raise
 
 
 @router.patch("/{todo_id}/complete", response_model=TodoResponse)
 async def toggle_todo_completion(
     todo_id: int,
-    db: dict = Depends(get_db),
+    session: AsyncSession = Depends(get_db),
 ) -> TodoResponse:
     """
     Toggle todo completion status.
@@ -345,9 +334,7 @@ async def toggle_todo_completion(
     Returns:
         Updated todo entity with new completion status
     """
-    request_id = getattr(getattr(db.get("request"), "state", None), "id", "unknown")
-
-    logger.info("Toggling todo completion", request_id=request_id, todo_id=todo_id)
+    logger.info("Toggling todo completion", todo_id=todo_id)
 
     start_time = record_http_request_start("PATCH", "/api/v1/todos/{todo_id}/complete")
 
@@ -355,25 +342,24 @@ async def toggle_todo_completion(
         with tracer.start_as_current_span("toggle_todo_completion", kind="server") as span:
             span.set_attribute("todo_id", todo_id)
 
-            service = TodoService(db["session"])
+            service = TodoService(session)
             updated_todo = await service.toggle_todo_completion(todo_id)
 
             if not updated_todo:
-                duration = (db["start_time"] - start_time).total_seconds()
+                duration = (datetime.now() - start_time).total_seconds()
                 record_http_request_end(
                     "PATCH", "/api/v1/todos/{todo_id}/complete", status.HTTP_404_NOT_FOUND, duration
                 )
 
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found")
 
-            duration = (db["start_time"] - start_time).total_seconds()
+            duration = (datetime.now() - start_time).total_seconds()
             record_http_request_end(
                 "PATCH", "/api/v1/todos/{todo_id}/complete", status.HTTP_200_OK, duration
             )
 
             logger.info(
                 "Todo completion toggled successfully",
-                request_id=request_id,
                 todo_id=todo_id,
                 is_completed=updated_todo.is_completed,
             )
@@ -383,7 +369,7 @@ async def toggle_todo_completion(
     except HTTPException:
         raise
     except Exception as e:
-        duration = (db["start_time"] - start_time).total_seconds()
+        duration = (datetime.now() - start_time).total_seconds()
         record_http_request_end(
             "PATCH",
             "/api/v1/todos/{todo_id}/complete",
@@ -392,7 +378,7 @@ async def toggle_todo_completion(
         )
 
         logger.error(
-            "Failed to toggle todo completion", request_id=request_id, todo_id=todo_id, error=str(e)
+            "Failed to toggle todo completion", todo_id=todo_id, error=str(e)
         )
         raise
 

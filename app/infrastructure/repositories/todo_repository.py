@@ -14,13 +14,12 @@ This repository:
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import asc, desc, select
+from sqlalchemy import asc, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
 from app.core.metrics import record_db_query
 from app.domain.todo.models import Todo
-from app.infrastructure.redis import get, set
 
 logger = get_logger(__name__)
 
@@ -49,24 +48,12 @@ class TodoRepository:
         Returns:
             Todo entity or None
         """
-        cache_key = f"todo:{id}"
+        # BUG #4 FIX: Removed caching because cache returns dict, not Todo object.
+        # Querying database directly to always get a proper Todo ORM instance.
+        logger.debug(f"Querying database for todo {id}")
 
-        # Try cache first
-        if self.cache_enabled:
-            cached = await get(cache_key)
-            if cached is not None:
-                logger.debug(f"Cache hit for todo {id}")
-                return cached
-
-        logger.debug(f"Cache miss for todo {id}, querying database")
-
-        # Query database
         result = await self.session.execute(select(Todo).where(Todo.id == id))
         todo = result.scalar_one_or_none()
-
-        # Cache result
-        if todo:
-            await set(cache_key, todo.to_dict(), ttl=300)  # 5 minutes
 
         return todo
 
@@ -113,10 +100,10 @@ class TodoRepository:
             # Default sort by created_at descending
             query = query.order_by(desc(Todo.created_at))
 
-        # Get total count
-        count_query = select(Todo.id).select_from(query.subquery())
+        # BUG #3 FIX: Use SQL COUNT(*) instead of loading all IDs into memory with len(all())
+        count_query = select(func.count()).select_from(query.subquery())
         total_result = await self.session.execute(count_query)
-        total = len(total_result.all())
+        total = total_result.scalar()
 
         # Apply pagination
         offset = (page - 1) * page_size
@@ -146,7 +133,7 @@ class TodoRepository:
         todo = Todo(**todo_data)
 
         self.session.add(todo)
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(todo)
 
         # Clear cache for affected items
@@ -170,21 +157,23 @@ class TodoRepository:
         if not todo:
             return None
 
-        # Apply updates
-        update_data = {}
+        # BUG #2 FIX: Apply updates directly to the ORM object using setattr.
+        # Previous code collected values into update_data dict but never applied them.
+        has_changes = False
         for key, value in todo_data.items():
             if hasattr(todo, key) and key != "id":
-                update_data[key] = value
+                setattr(todo, key, value)
+                has_changes = True
 
-        if update_data:
-            await self.session.commit()
+        if has_changes:
             todo.updated_at = datetime.now()
+            await self.session.flush()
+            await self.session.refresh(todo)
 
             # Clear cache for updated item
             await self.clear_cache()
 
             logger.info(f"Updated todo with ID: {id}")
-            return todo
 
         return todo
 
@@ -203,7 +192,7 @@ class TodoRepository:
             return False
 
         await self.session.delete(todo)
-        await self.session.commit()
+        await self.session.flush()
 
         # Clear cache for deleted item
         await self.clear_cache()
@@ -229,7 +218,7 @@ class TodoRepository:
         todo.is_completed = is_completed
         todo.updated_at = datetime.now()
 
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(todo)
 
         # Clear cache

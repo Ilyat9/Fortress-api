@@ -7,7 +7,7 @@ All logs must be JSON format with proper tracing context.
 """
 
 import logging.config
-
+import logging
 import structlog
 from structlog.types import EventDict, Processor
 
@@ -122,14 +122,21 @@ def setup_logging() -> None:
 
     # Set up structlog
     structlog.configure(
-        processors=processors,
-        wrapper_class=structlog.make_filtering_bound_logger(
-            getattr(logging, logging_settings.log_level.upper())
-        ),
-        context_class=dict,
-        logger_factory=structlog.PrintLoggerFactory(),
-        cache_logger_on_first_use=True,
+    processors=[
+        structlog.contextvars.merge_contextvars,
+        structlog.stdlib.filter_by_level,
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.PositionalArgumentsFormatter(),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+    ],
+    wrapper_class=structlog.stdlib.BoundLogger,
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    cache_logger_on_first_use=True,
     )
+
 
 
 def get_logger(name: str) -> structlog.stdlib.BoundLogger:
