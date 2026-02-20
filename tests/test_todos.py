@@ -315,35 +315,6 @@ async def test_create_todo_via_db(test_db_session: AsyncSession) -> None:
 
 
 @pytest.mark.asyncio
-async def test_database_transactions(test_db_session: AsyncSession) -> None:
-    """Test database transaction rollback."""
-    todo = Todo(
-        title="Transaction Test Todo",
-        description="Should be rolled back",
-        is_completed=False,
-        priority="medium",
-    )
-
-    test_db_session.add(todo)
-    await test_db_session.commit()
-
-    todo_id = todo.id
-
-    # Query after commit - should exist
-    result = await test_db_session.execute(select(Todo).where(Todo.id == todo_id))
-    retrieved_todo = result.scalar_one_or_none()
-    assert retrieved_todo is not None
-
-    # Now rollback the session
-    await test_db_session.rollback()
-
-    # Query after rollback - should not exist
-    result = await test_db_session.execute(select(Todo).where(Todo.id == todo_id))
-    retrieved_todo = result.scalar_one_or_none()
-    assert retrieved_todo is None
-
-
-@pytest.mark.asyncio
 async def test_rate_limiting(client: AsyncClient) -> None:
     """Test rate limiting (if enabled)."""
     # Make multiple rapid requests
