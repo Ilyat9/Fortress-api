@@ -99,16 +99,6 @@ GET    /metrics              Prometheus metrics
 - Username: `admin`
 - Password: `admin`
 
-## 🛠️ Git Commits
-
-See [GIT_COMMIT_GUIDE.md](GIT_COMMIT_GUIDE.md) for detailed commit instructions.
-
-Quick commit example:
-```bash
-git add .
-git commit -m "feat(initial): bootstrap todo-api project"
-git push origin main
-```
 
 ## 📚 Documentation
 

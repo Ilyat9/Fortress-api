@@ -5,8 +5,8 @@
 ## Development Setup
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/your-username/Fortress.git`
-3. Navigate to the project: `cd Fortress`
+2. Clone your fork: `git clone https://github.com/Ilyat9/Fortress-api`
+3. Navigate to the project: `cd Fortress-api`
 4. Install dependencies: `poetry install --with dev`
 5. Create a feature branch: `git checkout -b feature/amazing-feature`
 

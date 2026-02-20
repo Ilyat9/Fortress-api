@@ -80,7 +80,7 @@ async def client(test_db_session: AsyncSession) -> AsyncGenerator:
 
     app.dependency_overrides[get_db] = override_get_db
 
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(app=app, base_url="http://test", follow_redirects=True) as ac:
         yield ac
 
     app.dependency_overrides.clear()
