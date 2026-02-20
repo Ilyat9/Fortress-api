@@ -36,7 +36,7 @@ router = APIRouter(prefix="/todos", tags=["todos"])
 tracer = get_tracer()
 
 
-@router.get("", response_model=TodoListResponse)
+@router.get("/", response_model=TodoListResponse)
 async def list_todos(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
@@ -44,7 +44,7 @@ async def list_todos(
     order: str = Query("desc", description="Sort order: asc or desc"),
     is_completed: bool | None = Query(None, description="Filter by completion status"),
     priority: str | None = Query(
-        None, pattern="^(low|medium|high)$", description="Filter by priority"
+        None, regex="^(low|medium|high)$", description="Filter by priority"
     ),
     session: AsyncSession = Depends(get_db),
 ) -> TodoListResponse:
@@ -163,7 +163,7 @@ async def get_todo(
         raise
 
 
-@router.post("", response_model=TodoResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=TodoResponse, status_code=status.HTTP_201_CREATED)
 async def create_todo(
     todo_data: TodoCreate,
     session: AsyncSession = Depends(get_db),
@@ -381,18 +381,3 @@ async def toggle_todo_completion(
             "Failed to toggle todo completion", todo_id=todo_id, error=str(e)
         )
         raise
-
-
-@router.get("/health", response_model=HealthResponse)
-async def health_check() -> HealthResponse:
-    """
-    Health check endpoint.
-
-    Returns:
-        Health status and version information
-    """
-    return HealthResponse(
-        status="healthy",
-        version=settings.app_version,
-        timestamp=datetime.now(),
-    )

@@ -331,39 +331,6 @@ pip install locust
 locust -f tests/load_test.py --host=http://localhost:8000
 ```
 
-## 📝 Git Workflow
-
-### Commit Convention
-
-Мы используем [Conventional Commits](https://www.conventionalcommits.org/):
-
-```
-<type>(scope): description
-
-Types:
-- feat: New feature
-- fix: Bug fix
-- refactor: Code refactoring
-- test: Test changes
-- ci: CI/CD changes
-- docs: Documentation
-- chore: Maintenance tasks
-```
-
-### Example Commits
-
-```bash
-feat(todos): add priority filtering
-
-Implement priority-based filtering for todo list endpoint
-
-- Add priority filter parameter
-- Add priority ordering in database queries
-- Add priority-related metrics
-
-Closes #123
-```
-
 ## 🤝 Contributing
 
 1. Fork the repository

@@ -92,8 +92,8 @@ def test_not_found(client: TestClient) -> None:
 
 
 def test_method_not_allowed(client: TestClient) -> None:
-    """Test 405 for wrong HTTP method."""
-    # GET to POST endpoint
-    response = client.get("/api/v1/todos")
+    """Test 405 for wrong HTTP method on health endpoint (no DB needed)."""
+    # POST is not registered on /api/v1/health — only GET is
+    response = client.post("/api/v1/health")
 
     assert response.status_code == 405
